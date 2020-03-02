@@ -5,10 +5,10 @@
 */
 
 //Astar Header file
-#include "Astar.h";
+#include "Astar.h"
 
 //BZFlag files
-#include "World.h";
+#include "World.h"
 #include "BZDBCache.h"
 #include "playing.h"
 #include <stack>
@@ -18,7 +18,7 @@ using namespace std;
 
 World* world = World::getWorld();
 const float worldSize = BZDBCache::worldSize;
-const float grid[200][200];
+extern const float grid[200][200];
 
 // A Utility Function to check whether given cell (row, col) 
 // is a valid cell or not. 
@@ -61,9 +61,9 @@ double Astar::calculateHValue(int row, int col, Pair dest)
 
 // A Utility Function to trace the path from the source 
 // to destination 
-float *Astar::tracePath(cell cellDetails[][COL], Pair dest)
+std::vector<RegionPoint> Astar::tracePath(cell cellDetails[][COL], Pair dest)
 {
-    float* path = new float[50];
+    std::vector<RegionPoint> path;
     //printf("\nThe Path is ");
     int row = dest.first;
     int col = dest.second;
@@ -74,22 +74,14 @@ float *Astar::tracePath(cell cellDetails[][COL], Pair dest)
         && cellDetails[row][col].parent_j == col))
     {
         Path.push(make_pair(row, col));
+        //path.insert(row, col);
         int temp_row = cellDetails[row][col].parent_i;
         int temp_col = cellDetails[row][col].parent_j;
         row = temp_row;
         col = temp_col;
     }
 
-    Path.push(make_pair(row, col));
-    int i = 0;
-    while (!Path.empty() && i < 50)
-    {
-        pair<int, int> p = Path.top();
-        path[i] = Path.top;
-        Path.pop();
-        //printf("-> (%d,%d) ", p.first, p.second);
-        i++;
-    }
+    //Path.push(make_pair(row, col));
 
     return path;
 }
@@ -97,10 +89,9 @@ float *Astar::tracePath(cell cellDetails[][COL], Pair dest)
 // A Function to find the shortest path between 
 // a given source cell to a destination cell according 
 // to A* Search Algorithm 
-float* Astar::aStarSearch(int grid[][COL], Pair src, Pair dest)
+std::vector<RegionPoint> Astar::aStarSearch(int grid[][COL], Pair src, Pair dest)
 {
-    float* path = new float[50];
-    path = {};
+    std::vector<RegionPoint> path;
 
     // If the source is out of range 
     if (isValid(src.first, src.second) == false)
@@ -637,8 +628,9 @@ float* Astar::aStarSearch(int grid[][COL], Pair src, Pair dest)
     return path;
 }
 
+
 // Main function to run A*
-float* Astar::runAStar( float start[2], float end[2])
+std::vector<RegionPoint> Astar::runAStar( float start[2], float end[2])
 {
     int grid[ROW][COL];
     Astar astar;
@@ -652,7 +644,7 @@ float* Astar::runAStar( float start[2], float end[2])
 //Convert a grid into size of the tank
 int       Astar::floatToInt(float floatX)
 {
-    return round((100 * (floatX + BZDBCache::worldSize)) / BZDBCache::worldSize);
+    return  static_cast<int>(((100 * (floatX + BZDBCache::worldSize)) / BZDBCache::worldSize) + 0.5);
 }
 
 //Convert a grid into size of the tank

@@ -4,6 +4,7 @@
 #include <utility>
 
 
+
 /* interface header */
 #include "LocalPlayer.h"
 
@@ -12,8 +13,8 @@
 #include "RegionPriorityQueue.h"
 #include "ServerLink.h"
 
-#define ROW 200
-#define COL 200
+#define ROW 186
+#define COL 186
 
 // Creating a shortcut for int, int pair type 
 typedef std::pair<int, int> Pair;
@@ -43,14 +44,15 @@ private:
     // A Utility Function to calculate the 'h' heuristics. 
     double calculateHValue(int row, int col, Pair dest);
     // A Utility Function to trace the path from the source to destination 
-    float *tracePath(cell cellDetails[][COL], Pair dest);
+    std::vector<RegionPoint> tracePath(cell cellDetails[][COL], Pair dest);
     //Initialize the array for map
     void initializeArray(int grid[ROW][COL]);
     int floatToInt(float floatX);
     float intToFloat(int intX);
+    std::vector<RegionPoint>    path;
 public:
     // A Function to find the shortest path between a given source cell to a destination cell according to A* Search Algorithm 
-    float* aStarSearch(int grid[][COL], Pair src, Pair dest);
+    std::vector<RegionPoint> aStarSearch(int grid[][COL], Pair src, Pair dest);
     // Main function to run A*
-    float* runAStar(float src[2], float dest[2]);
+    std::vector<RegionPoint> runAStar(float src[3], float dest[3]);
 };

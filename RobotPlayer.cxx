@@ -250,7 +250,7 @@ int          RobotPlayer::getCenterOfMass(float hoodSize, float teamCom[3])
             //position of other players
             const float* pPos;
             //distance of current robot to found teammate
-            double dist = 0;
+            double distance = 0;
             //Find a tank
             if (t < World::getWorld()->getCurMaxPlayers())
                 p = World::getWorld()->getPlayer(t);
@@ -263,8 +263,8 @@ int          RobotPlayer::getCenterOfMass(float hoodSize, float teamCom[3])
                 pPos = p->getPosition();
                 double x = pPos[0] - myPos[0];
                 double y = pPos[1] - myPos[1];
-                dist = hypotf(x, y);
-                if (dist < hoodSize)
+                distance = hypotf(x, y);
+                if (distance < hoodSize)
                 {
                     teamCom[0] = teamCom[0] + pPos[0];
                     teamCom[1] = teamCom[1] + pPos[1];
@@ -297,7 +297,7 @@ int         RobotPlayer::getAlignment(float hoodSize, float teamAlign[3], float*
             Player* p = NULL;
             const float* pPos;
             const float* velocity;
-            double dist = 0;
+            double distance = 0;
             //Find a tank
             if (t < World::getWorld()->getCurMaxPlayers())
             {
@@ -312,9 +312,9 @@ int         RobotPlayer::getAlignment(float hoodSize, float teamAlign[3], float*
                 pPos = p->getPosition();
                 double x = pPos[0] - myPos[0];
                 double y = pPos[1] - myPos[1];
-                dist = hypotf(x, y);
+                distance = hypotf(x, y);
                 velocity = p->getVelocity();
-                if (dist < hoodSize)
+                if (distance < hoodSize)
                 {
                     teamAlign[0] = teamAlign[0] + velocity[0];
                     teamAlign[1] = teamAlign[1] + velocity[1];
@@ -351,7 +351,7 @@ int          RobotPlayer::getSeparation(float hoodSize, float teamSep[3])
             //robot p's position
             const float* pPos;
             //distance of current robot to found teammate
-            float dist = 0;
+            float distance = 0;
             float avoid[3];
             //Find a tank
             if (t < World::getWorld()->getCurMaxPlayers())
@@ -364,16 +364,16 @@ int          RobotPlayer::getSeparation(float hoodSize, float teamSep[3])
                 pPos = p->getPosition();
                 avoid[0] = myPos[0] - pPos[0];
                 avoid[1] = myPos[1] - pPos[1];
-                dist = hypotf(avoid[0], avoid[1]);
-                if (dist == 0.0)
+                distance = hypotf(avoid[0], avoid[1]);
+                if (distance == 0.0)
                 {
-                    dist = 0.0001f;
+                    distance = 0.0001f;
                     avoid[0] = float(bzfrand());
                     avoid[1] = float(bzfrand());
                 }
-                if (dist < hoodSize)
+                if (distance < hoodSize)
                 {
-                    float ddist = dist * dist * dist;
+                    float ddist = distance * distance * distance;
                     teamSep[0] = teamSep[0] + (avoid[0] / ddist);
                     teamSep[1] = teamSep[1] + (avoid[1] / ddist);
                     teamSep[2] = teamSep[2] + (avoid[2] / ddist);
@@ -557,7 +557,7 @@ void            RobotPlayer::doUpdateMotion(float dt)
         if (!evading && dt > 0.0)
         {
             TeamColor myTeam = getTeam();
-            float dist;
+            float distance;
             float hoodSize = BZDBCache::tankRadius;
             float velocity[2];
             float com[3];
@@ -565,10 +565,12 @@ void            RobotPlayer::doUpdateMotion(float dt)
             float separation[3];
             float align[3] = { 0.0f, 0.0f, 0.0f };
             float alignAzi;
-            float *path = new float[3];
+            float *endPoint = new float[2];
+
             int coNeighbors = getCenterOfMass(BZDBCache::worldSize, com);
             int sepNeighbors = getSeparation(hoodSize * 10, separation);
             int alignNeighbors = getAlignment(hoodSize * 10, align, &alignAzi);
+            float v1[2];
             //Check if there are any neighbors
             if (coNeighbors == 0)
             {
@@ -585,29 +587,39 @@ void            RobotPlayer::doUpdateMotion(float dt)
             if (haveFlag())
             {
                 //Set our goal as our home base
-                getMyBase(myTeam, path);
-                path = astar.runAStar(position, path);
-                path[0] = path[0] - position[0];
-                path[1] = path[1] - position[1];
+                getMyBase(myTeam, endPoint);
+                /*path = astar.runAStar(position, endPoint);
+                const float* nextPos = path[pathIndex].get();*/
+                const float* nextPos = v1;
+                v1[0] = nextPos[0] - position[0];
+                v1[1] = nextPos[1] - position[1];
             }
+            //If there are no flags, go find it
             //If there are no flags, go find it
             else
             {
-                findFlag(path);
-                path = astar.runAStar(position, path);
-                path[0] = path[0] - position[0];
-                path[1] = path[1] - position[1];
+                findFlag(endPoint);
+                path = astar.runAStar(position, endPoint);
+                const float* nextPos = path.front().get();
+                //const float* nextPos = v1;
+                v1[0] = nextPos[0] - position[0];
+                v1[1] = nextPos[1] - position[1];
             }
 
-            velocity[0] = CohesionVector * cohesion[0] + SeparationVector * separation[0] + AlignVector * align[0] + PathVector * path[0];
-            velocity[1] = CohesionVector * cohesion[1] + SeparationVector * separation[1] + AlignVector * align[1] + PathVector * path[1];
+            velocity[0] = CohesionVector * cohesion[0] + SeparationVector * separation[0] + AlignVector * align[0] + PathVector * endPoint[0];
+            velocity[1] = CohesionVector * cohesion[1] + SeparationVector * separation[1] + AlignVector * align[1] + PathVector * endPoint[1];
             float totalWeight = CohesionVector + SeparationVector + AlignVector + PathVector;
 
             velocity[0] = velocity[0] / totalWeight;
             velocity[1] = velocity[1] / totalWeight;
 
-            dist = hypotf(velocity[0], velocity[1]);
+            distance = hypotf(velocity[0], velocity[1]);
             float tankRadius = BZDBCache::tankRadius;
+
+            // smooth path a little by turning early at corners, might get us stuck, though
+            //if (distance <= 2.5f * tankRadius)
+                //pathIndex++;
+
             float segmentAzimuth = atan2f(velocity[1], velocity[0]);
             float azimuthDiff = segmentAzimuth - azimuth;
 
@@ -641,11 +653,11 @@ void            RobotPlayer::doUpdateMotion(float dt)
                 // tank doesn't turn while moving forward
                 setDesiredAngVel(0.0f);
                 // find how long it will take to get to next path segment
-                if (dist <= dt * tankSpeed)
+                if (distance <= dt * tankSpeed)
                 {
-                    pathIndex++;
+                    //pathIndex++;
                     // set desired speed
-                    setDesiredSpeed(dist / dt / tankSpeed);
+                    setDesiredSpeed(distance / dt / tankSpeed);
                 }
                 else
                     setDesiredSpeed(1.0f);
@@ -668,7 +680,7 @@ void            RobotPlayer::restart(const float* pos, float _azimuth)
     // no target
     path.clear();
     target = NULL;
-    pathIndex = 0;
+    //pathIndex = 0;
 
 }
 
@@ -754,7 +766,7 @@ void            RobotPlayer::setTarget(const Player* _target)
         path.push_back(q1);
     else
         path.clear();
-    pathIndex = 0;
+    //pathIndex = 0;
 }
 
 BzfRegion* RobotPlayer::findRegion(const float p[2],

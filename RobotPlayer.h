@@ -54,7 +54,7 @@ private:
     int getSeparation(float hoodSize, float teamSep[3]);
     void RobotPlayer::getMyBase(TeamColor teamColor, float location[3]);
     bool RobotPlayer::haveFlag(void);
-	void aStarSearch(float grid[ROW][COL], Pair src, Pair dest);
+	//void aStarSearch(float grid[ROW][COL], Pair src, Pair dest);
     void RobotPlayer::findFlag(float location[3]);
     Player* findPlayer(PlayerId id);
     void        doUpdate(float dt);
